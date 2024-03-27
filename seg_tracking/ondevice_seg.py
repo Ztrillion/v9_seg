@@ -3,7 +3,7 @@ import numpy as np
 import tkinter as tk
 from tkinter import ttk
 import datetime
-
+from picamera2 import Picamera2
 class DetectedObjectsWidget(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -55,17 +55,20 @@ def detect_draw_masks(frame, masks, classes, class_names=None):
     return frame
 
 if __name__ == '__main__':
-
+    cv2.startWindowThread()
     gui = DetectedObjectsWidget()
 
     general_model = seg_model_utils.ondviceEXCUTE('lib/seg_model.onnx', conf_thres=0.5, iou_thres=0.3)
-    cap = cv2.VideoCapture(0)
+    
+    picam2 = Picamera2()
+    picam2.configure(picam2.create_preview_configuration(main={"format": 'XRGB8888', "size": (640, 480)}))
+    picam2.start()
 
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-        frame = show_detected_video(frame, gui)
+
+    while True:
+        im = picam2.capture_array()
+    
+        frame = show_detected_video(im, gui)
         
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         blur = cv2.GaussianBlur(gray,(5,5),0)
